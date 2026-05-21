@@ -959,6 +959,7 @@ function addOption() {
     cost: 0, mitigations: [], children: []
   });
   renderAll();
+  scheduleSave();
 }
 
 function addChild(parentId) {
@@ -975,6 +976,7 @@ function addChild(parentId) {
   state.selectedNodeId = newNode.id;
   state.collapsed.delete(parentId);
   renderAll();
+  scheduleSave();
 }
 
 function deleteNode(id) {
@@ -987,6 +989,7 @@ function deleteNode(id) {
   removeFrom(d.nodes);
   if (state.selectedNodeId === id) state.selectedNodeId = null;
   renderAll();
+  scheduleSave();
 }
 
 function updateNode(id, key, value) {
@@ -994,12 +997,9 @@ function updateNode(id, key, value) {
   const node = findNode(d.nodes, id);
   if (node) node[key] = value;
   renderDecisionsList();
-  // re-render tree only (not detail to avoid losing focus)
   const treeRoot = document.getElementById('treeRoot');
-  if (treeRoot) {
-    treeRoot.innerHTML = '';
-    renderTree(d.nodes, treeRoot, 0);
-  }
+  if (treeRoot) { treeRoot.innerHTML = ''; renderTree(d.nodes, treeRoot, 0); }
+  scheduleSave();
 }
 
 function setRisk(id, risk) {
@@ -1007,6 +1007,7 @@ function setRisk(id, risk) {
   const node = findNode(d.nodes, id);
   if (node) node.risk = node.risk === risk ? null : risk;
   renderAll();
+  scheduleSave();
 }
 
 function setCost(id, val) {
@@ -1014,6 +1015,7 @@ function setCost(id, val) {
   const node = findNode(d.nodes, id);
   if (node) node.cost = val;
   renderDetail();
+  scheduleSave();
 }
 
 function toggleTarget(id) {
@@ -1021,6 +1023,7 @@ function toggleTarget(id) {
   const node = findNode(d.nodes, id);
   if (node) node.isTarget = !node.isTarget;
   renderAll();
+  scheduleSave();
 }
 
 function toggleIrreversible(id) {
@@ -1028,6 +1031,7 @@ function toggleIrreversible(id) {
   const node = findNode(d.nodes, id);
   if (node) node.irreversible = !node.irreversible;
   renderDetail();
+  scheduleSave();
 }
 
 function addMitigation(id) {
@@ -1035,6 +1039,7 @@ function addMitigation(id) {
   const node = findNode(d.nodes, id);
   if (node) { node.mitigations = node.mitigations || []; node.mitigations.push(''); }
   renderDetail();
+  scheduleSave();
 }
 
 function deleteMitigation(id, idx) {
@@ -1042,12 +1047,14 @@ function deleteMitigation(id, idx) {
   const node = findNode(d.nodes, id);
   if (node) node.mitigations.splice(idx, 1);
   renderAll();
+  scheduleSave();
 }
 
 function updateMitigation(id, idx, val) {
   const d = activeDecision();
   const node = findNode(d.nodes, id);
   if (node) node.mitigations[idx] = val;
+  scheduleSave();
 }
 
 // ═══════════════════════════════════════
@@ -1079,6 +1086,7 @@ function createDecision() {
   state.selectedNodeId = null;
   closeModal();
   renderAll();
+  scheduleSave();
 }
 
 document.getElementById('modalOverlay').addEventListener('click', function(e) {
@@ -1162,49 +1170,6 @@ function scheduleSave() {
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(() => saveToSheets(), 2000);
   showSyncStatus('pending', '● Niezapisane zmiany');
-}
-
-// Patch wszystkich funkcji mutujących dane
-const _origAddOption = addOption;
-const _origAddChild = addChild;
-const _origDeleteNode = deleteNode;
-const _origUpdateNode = updateNode;
-const _origSetRisk = setRisk;
-const _origSetCost = setCost;
-const _origToggleTarget = toggleTarget;
-const _origToggleIrreversible = toggleIrreversible;
-const _origAddMitigation = addMitigation;
-const _origDeleteMitigation = deleteMitigation;
-const _origUpdateMitigation = updateMitigation;
-const _origCreateDecision = createDecision;
-
-function addOption() { _origAddOption(); scheduleSave(); }
-function addChild(p) { _origAddChild(p); scheduleSave(); }
-function deleteNode(id) { _origDeleteNode(id); scheduleSave(); }
-function setRisk(id, r) { _origSetRisk(id, r); scheduleSave(); }
-function setCost(id, v) { _origSetCost(id, v); scheduleSave(); }
-function toggleTarget(id) { _origToggleTarget(id); scheduleSave(); }
-function toggleIrreversible(id) { _origToggleIrreversible(id); scheduleSave(); }
-function addMitigation(id) { _origAddMitigation(id); scheduleSave(); }
-function deleteMitigation(id, i) { _origDeleteMitigation(id, i); scheduleSave(); }
-function updateMitigation(id, i, v) { _origUpdateMitigation(id, i, v); scheduleSave(); }
-function updateNode(id, key, value) { _origUpdateNode(id, key, value); scheduleSave(); }
-function createDecision() {
-  const title = document.getElementById('modalTitle').value.trim();
-  if (!title) return;
-  const d = {
-    id: uid(),
-    title,
-    context: document.getElementById('modalContext').value.trim(),
-    createdAt: new Date().toISOString(),
-    nodes: []
-  };
-  state.decisions.push(d);
-  state.activeDecisionId = d.id;
-  state.selectedNodeId = null;
-  closeModal();
-  renderAll();
-  scheduleSave();
 }
 
 // ═══════════════════════════════════════
