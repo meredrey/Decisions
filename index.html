@@ -642,64 +642,6 @@ let state = {
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 // ═══════════════════════════════════════
-// SAMPLE DATA
-// ═══════════════════════════════════════
-function loadSampleData() {
-  const sampleDecision = {
-    id: uid(),
-    title: 'Czy zmienić pracę?',
-    context: 'Rozważam odejście z Veevy w ciągu najbliższych 12 miesięcy.',
-    createdAt: new Date().toISOString(),
-    nodes: [
-      {
-        id: 'opt1', type: 'option', label: 'Opcja 1: Zmienić pracę',
-        description: '', risk: null, isTarget: false, irreversible: false,
-        cost: 0, mitigations: [], children: [
-          {
-            id: 'r1a', type: 'result', label: 'Mniejsze zaangażowanie w Veevie',
-            description: 'Podczas szukania pracy uwaga i energia będą podzielone.',
-            risk: 'red', isTarget: false, irreversible: false, cost: 2,
-            mitigations: ['Ustalić jasne granice czasowe na szukanie pracy', 'Informować managera z wyprzedzeniem'],
-            children: [
-              {
-                id: 'r1a1', type: 'result', label: 'Gorsza ocena pracy',
-                description: 'Ryzyko obniżenia performance review przy mniejszym zaangażowaniu.',
-                risk: 'yellow', isTarget: true, irreversible: false, cost: 3,
-                mitigations: ['Priorytetyzować kluczowe deliverables', 'Komunikować otwarcie z managerem'],
-                children: []
-              }
-            ]
-          },
-          {
-            id: 'r1b', type: 'result', label: 'Szansa na wyższe wynagrodzenie',
-            description: 'Nowa rola może przynieść 20-40% wzrost kompensacji.',
-            risk: 'green', isTarget: false, irreversible: false, cost: 1,
-            mitigations: [],
-            children: []
-          }
-        ]
-      },
-      {
-        id: 'opt2', type: 'option', label: 'Opcja 2: Nie zmieniać',
-        description: '', risk: null, isTarget: false, irreversible: false,
-        cost: 0, mitigations: [], children: [
-          {
-            id: 'r2a', type: 'result', label: 'Status quo — brak awansu',
-            description: 'Pozostanie na obecnym stanowisku bez perspektywy na leadership.',
-            risk: 'yellow', isTarget: true, irreversible: false, cost: 2,
-            mitigations: ['Aktywne budowanie visibility wewnątrz Veevy', 'Rozmowa z managerem o ścieżce kariery'],
-            children: []
-          }
-        ]
-      }
-    ]
-  };
-  state.decisions.push(sampleDecision);
-  state.activeDecisionId = sampleDecision.id;
-  renderAll();
-}
-
-// ═══════════════════════════════════════
 // FIND NODE (recursive)
 // ═══════════════════════════════════════
 function findNode(nodes, id) {
@@ -775,7 +717,7 @@ function renderMain() {
   const main = document.getElementById('mainArea');
   const d = activeDecision();
   if (!d) {
-    main.innerHTML = '<div class="no-decision">Wybierz lub utwórz decyzję</div>';
+    main.innerHTML = '<div class="no-decision">Utwórz pierwszą decyzję przyciskiem + Nowa</div>';
     return;
   }
 
@@ -1142,25 +1084,20 @@ async function loadFromSheets() {
   try {
     const resp = await fetch(SHEETS_URL + '?action=load');
     const data = await resp.json();
-    if (data.decisions && Array.isArray(data.decisions)) {
-      if (data.decisions.length > 0) {
-        state.decisions = data.decisions;
-        state.activeDecisionId = data.decisions[0].id;
-        showSyncStatus('ok', '✓ Wczytano z Google Sheets');
-      } else {
-        // pusty arkusz — załaduj przykładowe dane
-        loadSampleData();
-        showSyncStatus('ok', '✓ Nowy arkusz — załadowano przykład');
-        scheduleSave();
-        return;
-      }
+    if (data.decisions && Array.isArray(data.decisions) && data.decisions.length > 0) {
+      state.decisions = data.decisions;
+      state.activeDecisionId = data.decisions[0].id;
+      showSyncStatus('ok', '✓ Wczytano z Google Sheets');
     } else {
-      loadSampleData();
-      showSyncStatus('ok', '✓ Przykładowe dane');
+      // pusty arkusz — czysta aplikacja
+      state.decisions = [];
+      state.activeDecisionId = null;
+      showSyncStatus('ok', '✓ Gotowa');
     }
   } catch(e) {
-    loadSampleData();
-    showSyncStatus('error', '✗ Offline — przykładowe dane');
+    state.decisions = [];
+    state.activeDecisionId = null;
+    showSyncStatus('error', '✗ Offline');
   }
   renderAll();
 }
