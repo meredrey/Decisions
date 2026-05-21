@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decyzje — Analiza Ryzyka</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f1ed;
+    --surface: #ffffff;
+    --surface2: #ede8e2;
+    --border: #d4c8bc;
+    --text: #1e1a17;
+    --text-soft: #7a6e65;
+    --mauve: #9e7070;
+    --mauve-light: #f0e0e0;
+    --sage: #5e8a5e;
+    --sage-light: #d4ebd4;
+    --lavender: #6e6ea8;
+    --lavender-light: #d8d8f0;
+    --teal: #3e9898;
+    --teal-light: #c8e8e8;
+    --rose: #b87878;
+    --green: #4a8a5a;
+    --green-light: #c8e8d0;
+    --yellow: #b89040;
+    --yellow-light: #f0e0b0;
+    --red: #b84848;
+    --red-light: #f8d8d8;
+    --shadow: 0 2px 16px rgba(30,26,23,0.09);
+    --shadow-lg: 0 8px 36px rgba(30,26,23,0.13);
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .logo span { color: var(--mauve); font-style: italic; }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; height: calc(100vh - 64px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 290px;
+    min-width: 290px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+  }
+  .btn-new {
+    background: var(--mauve);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-weight: 500;
+  }
+  .btn-new:hover { opacity: 0.85; }
+
+  .decisions-list { overflow-y: auto; flex: 1; padding: 10px; }
+  .decision-item {
+    padding: 13px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 3px;
+    border: 1.5px solid transparent;
+  }
+  .decision-item:hover { background: var(--surface2); }
+  .decision-item.active { background: var(--mauve-light); border-color: var(--mauve); }
+  .decision-item-title {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .decision-item-meta {
+    font-size: 12px;
+    color: var(--text-soft);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-red { background: var(--red); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-green { background: var(--green); }
+
+  /* ── MAIN AREA ── */
+  .main { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── TREE PANEL ── */
+  .tree-panel {
+    width: 420px;
+    min-width: 360px;
+    border-right: 1.5px solid var(--border);
+    background: var(--bg);
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .tree-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .decision-title-big {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .btn-add-option {
+    background: none;
+    border: 1.5px dashed var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--text-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-add-option:hover { border-color: var(--mauve); color: var(--mauve); }
+
+  /* ── TREE NODE ── */
+  .tree-branch { display: flex; flex-direction: column; gap: 8px; }
+  .tree-node {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .tree-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+    min-width: 20px;
+    position: relative;
+  }
+  .tree-connector-line {
+    width: 1.5px;
+    background: var(--border);
+    flex: 1;
+    margin: 0 auto;
+  }
+  .tree-connector-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+
+  .node-card {
+    flex: 1;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: var(--surface);
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: 10px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .node-card:hover { border-color: var(--mauve); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .node-card.selected { border-color: var(--mauve); background: var(--mauve-light); }
+  .node-card.risk-red { border-left: 5px solid var(--red); background: #fff8f8; }
+  .node-card.risk-yellow { border-left: 5px solid var(--yellow); background: #fffbf0; }
+  .node-card.risk-green { border-left: 5px solid var(--green); background: #f4fbf4; }
+  .node-card.risk-red.selected { background: var(--red-light); }
+  .node-card.risk-yellow.selected { background: var(--yellow-light); }
+  .node-card.risk-green.selected { background: var(--green-light); }
+  .node-card.is-target { border-top: 3px solid var(--teal); }
+
+  .node-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .node-label {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+    color: var(--text);
+  }
+  .node-badges { display: flex; gap: 5px; align-items: center; }
+  .badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge-target { background: var(--teal-light); color: var(--teal); }
+  .badge-mitigated { background: var(--sage-light); color: var(--sage); }
+  .badge-option { background: var(--lavender-light); color: var(--lavender); }
+  .node-desc {
+    font-size: 13px;
+    color: var(--text-soft);
+    line-height: 1.5;
+    margin-bottom: 2px;
+  }
+  .node-children { margin-left: 28px; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .node-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .btn-mini {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-soft);
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .btn-mini:hover { border-color: var(--mauve); color: var(--mauve); background: var(--mauve-light); }
+  .btn-mini.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+
+  .collapse-btn {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-soft);
+    flex-shrink: 0;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .collapse-btn:hover { border-color: var(--mauve); color: var(--mauve); }
+
+  /* ── SUMMARY BAR ── */
+  .summary-bar {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .summary-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .summary-count {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .summary-label { color: var(--text-soft); font-size: 12px; font-weight: 500; }
+
+  /* ── DETAIL PANEL ── */
+  .detail-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-soft);
+    gap: 14px;
+    text-align: center;
+  }
+  .empty-icon { font-size: 48px; opacity: 0.3; }
+  .empty-text { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-style: italic; }
+
+  /* Detail sections */
+  .detail-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .detail-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field-label { font-size: 12px; color: var(--text-soft); font-weight: 600; letter-spacing: 0.03em; }
+  .field-input {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color 0.15s;
+    outline: none;
+    width: 100%;
+    resize: vertical;
+  }
+  .field-input:focus { border-color: var(--mauve); background: white; }
+
+  /* Risk selector */
+  .risk-selector { display: flex; gap: 10px; }
+  .risk-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.15s;
+    background: none;
+  }
+  .risk-btn.red.active { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .risk-btn.yellow.active { background: var(--yellow-light); border-color: var(--yellow); color: #8a6020; }
+  .risk-btn.green.active { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .risk-btn:not(.active):hover { border-color: var(--mauve); }
+
+  /* Toggles */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; }
+  .toggle-label { font-size: 14px; }
+  .toggle {
+    width: 42px; height: 24px;
+    border-radius: 12px;
+    background: var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: none;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--teal); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: white;
+    top: 4px; left: 4px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { left: 22px; }
+
+  /* Stars / cost */
+  .star-row { display: flex; gap: 6px; }
+  .star {
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--border);
+    transition: color 0.1s;
+    line-height: 1;
+    user-select: none;
+  }
+  .star.filled { color: var(--yellow); }
+
+  /* Mitigations */
+  .mitigation-list { display: flex; flex-direction: column; gap: 10px; }
+  .mitigation-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: var(--sage-light);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1.5px solid var(--border);
+  }
+  .mitigation-num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sage);
+    width: 18px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .mitigation-content { flex: 1; }
+  .mitigation-input {
+    border: none;
+    background: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+    color: var(--text);
+  }
+  .btn-del-mit {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-soft);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+  .btn-del-mit:hover { opacity: 1; color: var(--red); }
+  .btn-add-mit {
+    font-size: 13px;
+    color: var(--sage);
+    background: none;
+    border: 1.5px dashed var(--sage);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    width: 100%;
+    text-align: left;
+    font-weight: 500;
+  }
+  .btn-add-mit:hover { background: var(--sage-light); }
+
+  /* Save btn */
+  .btn-save {
+    background: var(--mauve);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    align-self: flex-end;
+  }
+  .btn-save:hover { opacity: 0.85; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(45,41,38,0.4);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 440px;
+    max-width: 95vw;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transform: translateY(12px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn-cancel {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-soft);
+    transition: all 0.15s;
+  }
+  .btn-cancel:hover { border-color: var(--text-soft); color: var(--text); }
+
+  /* ── SYNC STATUS ── */
+  .sync-status {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .sync-status.ok { color: #4a8a5a; background: #c8e8d0; }
+  .sync-status.saving { color: #6e6ea8; background: #d8d8f0; }
+  .sync-status.pending { color: #b89040; background: #f0e0b0; }
+  .sync-status.error { color: #b84848; background: #f8d8d8; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  /* No decision selected */
+  .no-decision {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-soft);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">de<span>cy</span>zje</div>
+  <div style="display:flex;align-items:center;gap:20px;">
+    <span id="syncStatus" class="sync-status">⏳ Łączenie...</span>
+    <div style="font-size:11px;color:var(--text-soft);">Analiza ryzyka i scenariuszy</div>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR: lista decyzji -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Moje decyzje</span>
+      <button class="btn-new" onclick="openNewDecisionModal()">+ Nowa</button>
+    </div>
+    <div class="decisions-list" id="decisionsList"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainArea">
+    <div class="no-decision">Wybierz lub utwórz decyzję</div>
+  </div>
+</div>
+
+<!-- Modal: nowa decyzja -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Nowa decyzja</div>
+    <div class="field">
+      <label class="field-label">Pytanie decyzyjne</label>
+      <input class="field-input" id="modalTitle" placeholder="np. Czy zmienić pracę?" style="resize:none;">
+    </div>
+    <div class="field">
+      <label class="field-label">Kontekst (opcjonalnie)</label>
+      <textarea class="field-input" id="modalContext" rows="2" placeholder="Krótki opis sytuacji..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Anuluj</button>
+      <button class="btn-save" onclick="createDecision()">Utwórz</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let state = {
+  decisions: [],
+  activeDecisionId: null,
+  selectedNodeId: null,
+  collapsed: new Set()
+};
+
+// Helper: generate ID
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+// ═══════════════════════════════════════
+// SAMPLE DATA
+// ═══════════════════════════════════════
+function loadSampleData() {
+  const sampleDecision = {
+    id: uid(),
+    title: 'Czy zmienić pracę?',
+    context: 'Rozważam odejście z Veevy w ciągu najbliższych 12 miesięcy.',
+    createdAt: new Date().toISOString(),
+    nodes: [
+      {
+        id: 'opt1', type: 'option', label: 'Opcja 1: Zmienić pracę',
+        description: '', risk: null, isTarget: false, irreversible: false,
+        cost: 0, mitigations: [], children: [
+          {
+            id: 'r1a', type: 'result', label: 'Mniejsze zaangażowanie w Veevie',
+            description: 'Podczas szukania pracy uwaga i energia będą podzielone.',
+            risk: 'red', isTarget: false, irreversible: false, cost: 2,
+            mitigations: ['Ustalić jasne granice czasowe na szukanie pracy', 'Informować managera z wyprzedzeniem'],
+            children: [
+              {
+                id: 'r1a1', type: 'result', label: 'Gorsza ocena pracy',
+                description: 'Ryzyko obniżenia performance review przy mniejszym zaangażowaniu.',
+                risk: 'yellow', isTarget: true, irreversible: false, cost: 3,
+                mitigations: ['Priorytetyzować kluczowe deliverables', 'Komunikować otwarcie z managerem'],
+                children: []
+              }
+            ]
+          },
+          {
+            id: 'r1b', type: 'result', label: 'Szansa na wyższe wynagrodzenie',
+            description: 'Nowa rola może przynieść 20-40% wzrost kompensacji.',
+            risk: 'green', isTarget: false, irreversible: false, cost: 1,
+            mitigations: [],
+            children: []
+          }
+        ]
+      },
+      {
+        id: 'opt2', type: 'option', label: 'Opcja 2: Nie zmieniać',
+        description: '', risk: null, isTarget: false, irreversible: false,
+        cost: 0, mitigations: [], children: [
+          {
+            id: 'r2a', type: 'result', label: 'Status quo — brak awansu',
+            description: 'Pozostanie na obecnym stanowisku bez perspektywy na leadership.',
+            risk: 'yellow', isTarget: true, irreversible: false, cost: 2,
+            mitigations: ['Aktywne budowanie visibility wewnątrz Veevy', 'Rozmowa z managerem o ścieżce kariery'],
+            children: []
+          }
+        ]
+      }
+    ]
+  };
+  state.decisions.push(sampleDecision);
+  state.activeDecisionId = sampleDecision.id;
+  renderAll();
+}
+
+// ═══════════════════════════════════════
+// FIND NODE (recursive)
+// ═══════════════════════════════════════
+function findNode(nodes, id) {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const found = findNode(n.children, id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findParent(nodes, id, parent = null) {
+  for (const n of nodes) {
+    if (n.id === id) return parent;
+    const found = findParent(n.children, id, n);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+function activeDecision() {
+  return state.decisions.find(d => d.id === state.activeDecisionId);
+}
+
+// ═══════════════════════════════════════
+// SUMMARY STATS
+// ═══════════════════════════════════════
+function countRisks(nodes) {
+  let red = 0, yellow = 0, green = 0;
+  for (const n of nodes) {
+    if (n.risk === 'red') red++;
+    else if (n.risk === 'yellow') yellow++;
+    else if (n.risk === 'green') green++;
+    const c = countRisks(n.children);
+    red += c.red; yellow += c.yellow; green += c.green;
+  }
+  return { red, yellow, green };
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function renderAll() {
+  renderDecisionsList();
+  renderMain();
+}
+
+function renderDecisionsList() {
+  const el = document.getElementById('decisionsList');
+  el.innerHTML = '';
+  state.decisions.forEach(d => {
+    const stats = countRisks(d.nodes);
+    const div = document.createElement('div');
+    div.className = 'decision-item' + (d.id === state.activeDecisionId ? ' active' : '');
+    div.innerHTML = `
+      <div class="decision-item-title">${d.title}</div>
+      <div class="decision-item-meta">
+        ${stats.red > 0 ? `<span class="dot dot-red"></span>${stats.red}` : ''}
+        ${stats.yellow > 0 ? `<span class="dot dot-yellow"></span>${stats.yellow}` : ''}
+        ${stats.green > 0 ? `<span class="dot dot-green"></span>${stats.green}` : ''}
+        ${stats.red + stats.yellow + stats.green === 0 ? '<span style="color:var(--border)">brak węzłów</span>' : ''}
+      </div>`;
+    div.onclick = () => {
+      state.activeDecisionId = d.id;
+      state.selectedNodeId = null;
+      renderAll();
+    };
+    el.appendChild(div);
+  });
+}
+
+function renderMain() {
+  const main = document.getElementById('mainArea');
+  const d = activeDecision();
+  if (!d) {
+    main.innerHTML = '<div class="no-decision">Wybierz lub utwórz decyzję</div>';
+    return;
+  }
+
+  const stats = countRisks(d.nodes);
+
+  main.innerHTML = `
+    <div class="tree-panel" id="treePanel">
+      <div class="tree-panel-header">
+        <div class="decision-title-big">${d.title}</div>
+        <button class="btn-add-option" onclick="addOption()">+ Opcja</button>
+      </div>
+      <div class="summary-bar">
+        <div class="summary-item">
+          <span class="dot dot-red"></span>
+          <span class="summary-count" style="color:var(--red)">${stats.red}</span>
+          <span class="summary-label">nieakceptowalne</span>
+        </div>
+        <div class="summary-item">
+          <span class="dot dot-yellow"></span>
+          <span class="summary-count" style="color:var(--yellow)">${stats.yellow}</span>
+          <span class="summary-label">do mitygacji</span>
+        </div>
+        <div class="summary-item">
+          <span class="dot dot-green"></span>
+          <span class="summary-count" style="color:var(--green)">${stats.green}</span>
+          <span class="summary-label">akceptowalne</span>
+        </div>
+      </div>
+      <div id="treeRoot"></div>
+    </div>
+    <div class="detail-panel" id="detailPanel">
+      <div class="empty-state">
+        <div class="empty-icon">🌿</div>
+        <div class="empty-text">Kliknij węzeł, aby zobaczyć szczegóły</div>
+      </div>
+    </div>`;
+
+  renderTree(d.nodes, document.getElementById('treeRoot'), 0);
+  if (state.selectedNodeId) renderDetail();
+}
+
+function renderTree(nodes, container, depth) {
+  nodes.forEach((node, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.marginLeft = depth > 0 ? '24px' : '0';
+    wrapper.style.marginBottom = '6px';
+
+    const isCollapsed = state.collapsed.has(node.id);
+    const hasChildren = node.children && node.children.length > 0;
+
+    const riskClass = node.risk ? `risk-${node.risk}` : '';
+    const selectedClass = node.id === state.selectedNodeId ? 'selected' : '';
+    const targetClass = node.isTarget ? 'is-target' : '';
+
+    wrapper.innerHTML = `
+      <div class="node-card ${riskClass} ${selectedClass} ${targetClass}" onclick="selectNode('${node.id}')">
+        <div class="node-header">
+          ${hasChildren ? `<button class="collapse-btn" onclick="toggleCollapse(event,'${node.id}')">${isCollapsed ? '+' : '−'}</button>` : '<span style="width:16px;display:inline-block"></span>'}
+          <span class="node-label">${node.label}</span>
+          <div class="node-badges">
+            ${node.isTarget ? '<span class="badge badge-target">cel</span>' : ''}
+            ${node.type === 'option' ? '<span class="badge badge-option">opcja</span>' : ''}
+            ${node.mitigations && node.mitigations.length > 0 ? '<span class="badge badge-mitigated">mit.</span>' : ''}
+            ${node.risk ? `<span class="dot dot-${node.risk}"></span>` : ''}
+          </div>
+        </div>
+        ${node.description ? `<div class="node-desc">${node.description}</div>` : ''}
+        <div class="node-actions" onclick="event.stopPropagation()">
+          <button class="btn-mini" onclick="addChild('${node.id}')">+ Rezultat</button>
+          <button class="btn-mini danger" onclick="deleteNode('${node.id}')">✕</button>
+        </div>
+      </div>`;
+
+    container.appendChild(wrapper);
+
+    if (hasChildren && !isCollapsed) {
+      renderTree(node.children, wrapper, depth + 1);
+    }
+  });
+}
+
+// ═══════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════
+function renderDetail() {
+  const panel = document.getElementById('detailPanel');
+  if (!panel) return;
+  const d = activeDecision();
+  if (!d) return;
+  const node = findNode(d.nodes, state.selectedNodeId);
+  if (!node) return;
+
+  const costStars = [1,2,3,4,5].map(i =>
+    `<span class="star ${node.cost >= i ? 'filled' : ''}" onclick="setCost('${node.id}',${i})">★</span>`
+  ).join('');
+
+  const mits = (node.mitigations || []).map((m, i) => `
+    <div class="mitigation-item">
+      <span class="mitigation-num">${i+1}.</span>
+      <div class="mitigation-content">
+        <input class="mitigation-input" value="${m}" placeholder="Opisz mitygację..." onchange="updateMitigation('${node.id}',${i},this.value)">
+      </div>
+      <button class="btn-del-mit" onclick="deleteMitigation('${node.id}',${i})">×</button>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">Podstawowe informacje</div>
+      <div class="field-group">
+        <div class="field">
+          <label class="field-label">Nazwa / opis rezultatu</label>
+          <input class="field-input" value="${node.label}" onchange="updateNode('${node.id}','label',this.value)" placeholder="Co się wydarzy?">
+        </div>
+        <div class="field">
+          <label class="field-label">Szczegóły (opcjonalnie)</label>
+          <textarea class="field-input" rows="2" onchange="updateNode('${node.id}','description',this.value)" placeholder="Rozwiń...">${node.description || ''}</textarea>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">🎯 To jest docelowy rezultat do analizy</span>
+          <button class="toggle ${node.isTarget ? 'on' : ''}" onclick="toggleTarget('${node.id}')"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">⚠️ Decyzja nieodwracalna</span>
+          <button class="toggle ${node.irreversible ? 'on' : ''}" onclick="toggleIrreversible('${node.id}')"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Ocena ryzyka</div>
+      <div class="field-group">
+        <div class="field">
+          <label class="field-label">Akceptowalność konsekwencji</label>
+          <div class="risk-selector">
+            <button class="risk-btn red ${node.risk === 'red' ? 'active' : ''}" onclick="setRisk('${node.id}','red')">🔴 Nieakceptowalne</button>
+            <button class="risk-btn yellow ${node.risk === 'yellow' ? 'active' : ''}" onclick="setRisk('${node.id}','yellow')">🟡 Do mitygacji</button>
+            <button class="risk-btn green ${node.risk === 'green' ? 'active' : ''}" onclick="setRisk('${node.id}','green')">🟢 Akceptowalne</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Koszt / wysiłek mitygacji</label>
+          <div class="star-row">${costStars}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">Mitygacje</div>
+      <div class="mitigation-list">${mits}</div>
+      <br>
+      <button class="btn-add-mit" onclick="addMitigation('${node.id}')">+ Dodaj mitygację</button>
+    </div>
+
+    <button class="btn-save" onclick="renderAll()">Zapisz widok</button>
+  `;
+}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+function selectNode(id) {
+  state.selectedNodeId = id;
+  renderMain();
+}
+
+function toggleCollapse(e, id) {
+  e.stopPropagation();
+  if (state.collapsed.has(id)) state.collapsed.delete(id);
+  else state.collapsed.add(id);
+  renderMain();
+}
+
+function addOption() {
+  const d = activeDecision();
+  if (!d) return;
+  const num = d.nodes.length + 1;
+  d.nodes.push({
+    id: uid(), type: 'option',
+    label: `Opcja ${num}`,
+    description: '', risk: null, isTarget: false, irreversible: false,
+    cost: 0, mitigations: [], children: []
+  });
+  renderAll();
+}
+
+function addChild(parentId) {
+  const d = activeDecision();
+  const parent = findNode(d.nodes, parentId);
+  if (!parent) return;
+  const newNode = {
+    id: uid(), type: 'result',
+    label: 'Nowy rezultat',
+    description: '', risk: null, isTarget: false, irreversible: false,
+    cost: 0, mitigations: [], children: []
+  };
+  parent.children.push(newNode);
+  state.selectedNodeId = newNode.id;
+  state.collapsed.delete(parentId);
+  renderAll();
+}
+
+function deleteNode(id) {
+  const d = activeDecision();
+  function removeFrom(arr) {
+    const idx = arr.findIndex(n => n.id === id);
+    if (idx > -1) { arr.splice(idx, 1); return true; }
+    return arr.some(n => removeFrom(n.children));
+  }
+  removeFrom(d.nodes);
+  if (state.selectedNodeId === id) state.selectedNodeId = null;
+  renderAll();
+}
+
+function updateNode(id, key, value) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node[key] = value;
+  renderDecisionsList();
+  // re-render tree only (not detail to avoid losing focus)
+  const treeRoot = document.getElementById('treeRoot');
+  if (treeRoot) {
+    treeRoot.innerHTML = '';
+    renderTree(d.nodes, treeRoot, 0);
+  }
+}
+
+function setRisk(id, risk) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node.risk = node.risk === risk ? null : risk;
+  renderAll();
+}
+
+function setCost(id, val) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node.cost = val;
+  renderDetail();
+}
+
+function toggleTarget(id) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node.isTarget = !node.isTarget;
+  renderAll();
+}
+
+function toggleIrreversible(id) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node.irreversible = !node.irreversible;
+  renderDetail();
+}
+
+function addMitigation(id) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) { node.mitigations = node.mitigations || []; node.mitigations.push(''); }
+  renderDetail();
+}
+
+function deleteMitigation(id, idx) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node.mitigations.splice(idx, 1);
+  renderAll();
+}
+
+function updateMitigation(id, idx, val) {
+  const d = activeDecision();
+  const node = findNode(d.nodes, id);
+  if (node) node.mitigations[idx] = val;
+}
+
+// ═══════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════
+function openNewDecisionModal() {
+  document.getElementById('modalTitle').value = '';
+  document.getElementById('modalContext').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('modalTitle').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function createDecision() {
+  const title = document.getElementById('modalTitle').value.trim();
+  if (!title) return;
+  const d = {
+    id: uid(),
+    title,
+    context: document.getElementById('modalContext').value.trim(),
+    createdAt: new Date().toISOString(),
+    nodes: []
+  };
+  state.decisions.push(d);
+  state.activeDecisionId = d.id;
+  state.selectedNodeId = null;
+  closeModal();
+  renderAll();
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('open')) createDecision();
+});
+
+// ═══════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby5lSWTwPxemACEkdVe3Sr9_PjmJ04XzFJPM3UIObPEbkbVh_-Ip5qxqwW6faSrbCmDqg/exec';
+
+let syncTimeout = null;
+let isSyncing = false;
+let lastSaved = null;
+
+function showSyncStatus(status, msg) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.className = 'sync-status ' + status;
+  el.textContent = msg;
+}
+
+async function saveToSheets() {
+  if (isSyncing) return;
+  isSyncing = true;
+  showSyncStatus('saving', '⏳ Zapisywanie...');
+  try {
+    const payload = JSON.stringify({ decisions: state.decisions });
+    const resp = await fetch(SHEETS_URL + '?action=save', {
+      method: 'POST',
+      body: payload
+    });
+    const data = await resp.json();
+    if (data.status === 'ok') {
+      lastSaved = new Date();
+      showSyncStatus('ok', '✓ Zapisano ' + lastSaved.toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit'}));
+    } else {
+      showSyncStatus('error', '✗ Błąd zapisu');
+    }
+  } catch(e) {
+    showSyncStatus('error', '✗ Brak połączenia');
+  }
+  isSyncing = false;
+}
+
+async function loadFromSheets() {
+  showSyncStatus('saving', '⏳ Wczytywanie...');
+  try {
+    const resp = await fetch(SHEETS_URL + '?action=load');
+    const data = await resp.json();
+    if (data.decisions && Array.isArray(data.decisions)) {
+      if (data.decisions.length > 0) {
+        state.decisions = data.decisions;
+        state.activeDecisionId = data.decisions[0].id;
+        showSyncStatus('ok', '✓ Wczytano z Google Sheets');
+      } else {
+        // pusty arkusz — załaduj przykładowe dane
+        loadSampleData();
+        showSyncStatus('ok', '✓ Nowy arkusz — załadowano przykład');
+        scheduleSave();
+        return;
+      }
+    } else {
+      loadSampleData();
+      showSyncStatus('ok', '✓ Przykładowe dane');
+    }
+  } catch(e) {
+    loadSampleData();
+    showSyncStatus('error', '✗ Offline — przykładowe dane');
+  }
+  renderAll();
+}
+
+// Autosave z debounce — 2 sekundy po ostatniej zmianie
+function scheduleSave() {
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => saveToSheets(), 2000);
+  showSyncStatus('pending', '● Niezapisane zmiany');
+}
+
+// Patch wszystkich funkcji mutujących dane
+const _origAddOption = addOption;
+const _origAddChild = addChild;
+const _origDeleteNode = deleteNode;
+const _origUpdateNode = updateNode;
+const _origSetRisk = setRisk;
+const _origSetCost = setCost;
+const _origToggleTarget = toggleTarget;
+const _origToggleIrreversible = toggleIrreversible;
+const _origAddMitigation = addMitigation;
+const _origDeleteMitigation = deleteMitigation;
+const _origUpdateMitigation = updateMitigation;
+const _origCreateDecision = createDecision;
+
+function addOption() { _origAddOption(); scheduleSave(); }
+function addChild(p) { _origAddChild(p); scheduleSave(); }
+function deleteNode(id) { _origDeleteNode(id); scheduleSave(); }
+function setRisk(id, r) { _origSetRisk(id, r); scheduleSave(); }
+function setCost(id, v) { _origSetCost(id, v); scheduleSave(); }
+function toggleTarget(id) { _origToggleTarget(id); scheduleSave(); }
+function toggleIrreversible(id) { _origToggleIrreversible(id); scheduleSave(); }
+function addMitigation(id) { _origAddMitigation(id); scheduleSave(); }
+function deleteMitigation(id, i) { _origDeleteMitigation(id, i); scheduleSave(); }
+function updateMitigation(id, i, v) { _origUpdateMitigation(id, i, v); scheduleSave(); }
+function updateNode(id, key, value) { _origUpdateNode(id, key, value); scheduleSave(); }
+function createDecision() {
+  const title = document.getElementById('modalTitle').value.trim();
+  if (!title) return;
+  const d = {
+    id: uid(),
+    title,
+    context: document.getElementById('modalContext').value.trim(),
+    createdAt: new Date().toISOString(),
+    nodes: []
+  };
+  state.decisions.push(d);
+  state.activeDecisionId = d.id;
+  state.selectedNodeId = null;
+  closeModal();
+  renderAll();
+  scheduleSave();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+loadFromSheets();
+</script>
+</body>
+</html>
